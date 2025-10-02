@@ -14,16 +14,20 @@ services:
       POSTGRESQL_PASS: zammad
       POSTGRESQL_DB: zammad_production
       RAILS_ENV: production
-      REDIS_URL: redis://zammad-redis:6379
+      REDIS_URL: redis://zammad-redis:6379/0
       ZAMMAD_BIND_IP: 0.0.0.0
       ZAMMAD_RAILS_PORT: 3000
       ZAMMAD_WEBSOCKET_PORT: 6042
+      # Opcional: aumenta timeout para aguardar banco subir
+      ZAMMAD_DB_WAIT: 30
     ports:
       - "8080:3000"   # Rails app
       - "6042:6042"   # WebSocket
     depends_on:
-      - zammad-postgresql
-      - zammad-redis
+      zammad-postgresql:
+        condition: service_healthy
+      zammad-redis:
+        condition: service_started
     volumes:
       - zammad-data:/opt/zammad/storage
       - zammad-tmp:/opt/zammad/tmp
@@ -38,6 +42,12 @@ services:
       POSTGRES_DB: zammad_production
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zammad -d zammad_production"]
+      interval: 5s
+      retries: 10
+      timeout: 5s
+      start_period: 10s
 
   zammad-redis:
     image: redis:7-alpine
@@ -45,6 +55,11 @@ services:
     restart: always
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+      timeout: 5s
 
 volumes:
   zammad-data:
