@@ -1,0 +1,52 @@
+services:
+  zammad:
+    build:
+      context: .
+      args:
+        # Hash do commit; pode colocar qualquer string se não tiver git
+        COMMIT_SHA: "12345678"
+    container_name: zammad
+    restart: always
+    environment:
+      POSTGRESQL_HOST: zammad-postgresql
+      POSTGRESQL_USER: zammad
+      POSTGRESQL_PASS: zammad
+      POSTGRESQL_DB: zammad_production
+      RAILS_ENV: production
+      REDIS_URL: redis://zammad-redis:6379
+      ZAMMAD_BIND_IP: 0.0.0.0
+      ZAMMAD_RAILS_PORT: 3000
+      ZAMMAD_WEBSOCKET_PORT: 6042
+    ports:
+      - "8080:3000"   # Rails app
+      - "6042:6042"   # WebSocket
+    depends_on:
+      - zammad-postgresql
+      - zammad-redis
+    volumes:
+      - zammad-data:/opt/zammad/storage
+      - zammad-tmp:/opt/zammad/tmp
+
+  zammad-postgresql:
+    image: postgres:17
+    container_name: zammad-postgresql
+    restart: always
+    environment:
+      POSTGRES_USER: zammad
+      POSTGRES_PASSWORD: zammad
+      POSTGRES_DB: zammad_production
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  zammad-redis:
+    image: redis:7-alpine
+    container_name: zammad-redis
+    restart: always
+    volumes:
+      - redisdata:/data
+
+volumes:
+  zammad-data:
+  zammad-tmp:
+  pgdata:
+  redisdata:

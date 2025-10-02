@@ -102,4 +102,6 @@ Rails.application.configure do
   # Overwrite default Rails TRUSTED_PROXIES because otherwise IPs from private ranges will be
   # ignored for Session logging and fall back to localhost (https://github.com/zammad/zammad/issues/742).
   config.action_dispatch.trusted_proxies = Zammad::TrustedProxies.fetch
+
+  config.hosts << "192.168.1.13"
 end
