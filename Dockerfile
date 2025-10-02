@@ -10,14 +10,17 @@ ENV RAILS_ENV=production \
     BUNDLE_DEPLOYMENT=1 \
     BUNDLE_PATH=/usr/local/bundle \
     BUNDLE_WITHOUT="test development" \
-    RAILS_LOG_TO_STDOUT=true
+    RAILS_LOG_TO_STDOUT=true \
+    CERT_DIR=/opt/zammad/tmp/certs
 
-# Pacotes essenciais para gems nativas
+# Pacotes essenciais para gems nativas e openssl
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       curl libpq5 postgresql-client-17 \
       build-essential git libyaml-dev libpq-dev \
-      libxml2-dev libxslt1-dev zlib1g-dev && \
+      libxml2-dev libxslt1-dev zlib1g-dev \
+      openssl fakeroot && \
+    mkdir -p $CERT_DIR && \
     rm -rf /var/lib/apt/lists/*
 
 # ===== Node.js =====
@@ -61,15 +64,18 @@ ENV POSTGRESQL_DB=zammad_production \
     POSTGRESQL_USER=zammad \
     POSTGRESQL_PASS=zammad
 
-# Cria usuário Zammad
+# Cria usuário Zammad e diretórios
 RUN groupadd --system --gid 1000 zammad && \
     useradd --create-home --home /opt/zammad --shell /bin/bash --uid 1000 --gid 1000 zammad && \
-    mkdir -p /opt/zammad/storage /opt/zammad/tmp && \
+    mkdir -p /opt/zammad/storage /opt/zammad/tmp /opt/zammad/tmp/certs && \
     chown -R 1000:1000 /opt/zammad
 
 # Copia artefatos do build
 COPY --chown=1000:1000 --from=build /usr/local/bundle /usr/local/bundle
 COPY --chown=1000:1000 --from=build /opt/zammad /opt/zammad
+
+# Copia arquivos de certificado se existirem
+COPY --chown=1000:1000 ["ca.cnf", "intermediate.cnf", "pass.secret", "$CERT_DIR/"]
 
 USER 1000:1000
 ENTRYPOINT ["/opt/zammad/bin/docker-entrypoint"]
