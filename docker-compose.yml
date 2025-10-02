@@ -1,9 +1,10 @@
+version: '3.9'
+
 services:
   zammad:
     build:
       context: .
       args:
-        # Hash do commit; pode colocar qualquer string se não tiver git
         COMMIT_SHA: "12345678"
     container_name: zammad
     restart: always
